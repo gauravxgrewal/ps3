@@ -86,17 +86,11 @@ export const VALIDATION = {
     MIN_LENGTH: 4,
     MAX_LENGTH: 6,
     PATTERN: /^\d{4,6}$/,
-  },
-  OTP: {
-    LENGTH: 6,
-    EXPIRY_MINUTES: 10,
   }
 };
 
 // API Endpoints (if using backend)
 export const API_ENDPOINTS = {
-  SEND_OTP: '/api/auth/send-otp',
-  VERIFY_OTP: '/api/auth/verify-otp',
   CREATE_ORDER: '/api/orders/create',
   GET_ORDERS: '/api/orders/list',
 };
@@ -130,15 +124,12 @@ export const ERROR_MESSAGES = {
   SERVER: 'Server error. Please try again later.',
   INVALID_PHONE: 'Please enter a valid 10-digit mobile number',
   INVALID_NAME: 'Please enter your full name (min 3 characters)',
-  INVALID_OTP: 'Invalid OTP. Please try again.',
-  OTP_EXPIRED: 'OTP expired. Please request a new one.',
   ADMIN_ACCESS_DENIED: 'Access denied. Admin privileges required.',
   SESSION_EXPIRED: 'Session expired. Please login again.',
 };
 
 // Success Messages
 export const SUCCESS_MESSAGES = {
-  OTP_SENT: 'OTP sent successfully!',
   LOGIN_SUCCESS: 'Login successful!',
   ORDER_PLACED: 'Order placed successfully!',
   PROFILE_UPDATED: 'Profile updated successfully!',

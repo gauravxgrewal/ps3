@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { getUserByPhone, createUser, verifyAdmin } from '../services/userService';
-import { sendOTP, verifyOTP } from '../services/otpService';
 import { USER_ROLES } from '../data/constants';
 
 const AuthContext = createContext(null);
@@ -36,57 +35,11 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   /**
-   * Step 1: Check if user exists and send OTP
+   * Login/Register with Phone Number
+   * Directly creates or logs in user with just phone number
    */
-  const checkUserAndSendOTP = async (phoneNumber) => {
+  const loginWithPhone = async (phoneNumber, userName = null) => {
     try {
-      // Check if user exists in database
-      const userData = await getUserByPhone(phoneNumber);
-      const userExists = !!userData;
-
-      // Send OTP
-      const otpResult = await sendOTP(phoneNumber);
-
-      if (!otpResult.success) {
-        return {
-          success: false,
-          error: otpResult.error || 'Failed to send OTP'
-        };
-      }
-
-      return {
-        success: true,
-        userExists,
-        userData: userData || null,
-        sessionId: otpResult.sessionId,
-        message: otpResult.message,
-        devOTP: otpResult.devOTP // Only in development
-      };
-
-    } catch (error) {
-      console.error('Check user and send OTP error:', error);
-      return {
-        success: false,
-        error: error.message || 'Failed to process request'
-      };
-    }
-  };
-
-  /**
-   * Step 2: Verify OTP and Login/Register
-   */
-  const verifyOTPAndLogin = async (phoneNumber, otp, userName = null) => {
-    try {
-      // Verify OTP first
-      const otpVerification = await verifyOTP(phoneNumber, otp);
-
-      if (!otpVerification.success) {
-        return {
-          success: false,
-          error: otpVerification.error || 'Invalid OTP'
-        };
-      }
-
       // Check if user exists
       let userData = await getUserByPhone(phoneNumber);
 
@@ -94,8 +47,9 @@ export const AuthProvider = ({ children }) => {
       if (!userData) {
         if (!userName) {
           return {
-            success: false,
-            error: 'Name is required for new users'
+            success: true,
+            isNewUser: true,
+            userExists: false
           };
         }
 
@@ -127,12 +81,13 @@ export const AuthProvider = ({ children }) => {
 
       return {
         success: true,
+        isNewUser: !userData || !userData.id,
         user: normalizedUser,
         message: 'Login successful!'
       };
 
     } catch (error) {
-      console.error('Verify OTP and login error:', error);
+      console.error('Login with phone error:', error);
       return {
         success: false,
         error: error.message || 'Login failed'
@@ -182,8 +137,7 @@ export const AuthProvider = ({ children }) => {
   const value = useMemo(() => ({
     user,
     loading,
-    checkUserAndSendOTP,
-    verifyOTPAndLogin,
+    loginWithPhone,
     loginAdmin,
     signOut,
     isAdmin: user?.role === USER_ROLES.ADMIN,
