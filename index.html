@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- SEO Meta Tags -->
+    <title>PS3 FastFood - Fresh Pizza & Ice Cream Delivery | Order Online</title>
+    <meta name="description" content="Order delicious pizza, burgers, wraps, and ice cream from PS3 FastFood. Fast delivery in 30 minutes. Fresh ingredients, best prices. Order now on WhatsApp!" />
+    <meta name="keywords" content="pizza delivery, fast food, ice cream, burgers, wraps, online food order, PS3 FastFood" />
+    <meta name="author" content="PS3 FastFood" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="PS3 FastFood - Fresh Pizza & Ice Cream Delivery" />
+    <meta property="og:description" content="Order delicious food delivered in 30 minutes. Fresh ingredients, best prices!" />
+    <meta property="og:image" content="/hero.png" />
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="PS3 FastFood - Fresh Pizza & Ice Cream Delivery" />
+    <meta name="twitter:description" content="Order delicious food delivered in 30 minutes!" />
+    <meta name="twitter:image" content="/hero.png" />
+    
+    <!-- Mobile Optimization -->
+    <meta name="theme-color" content="#f97316" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="PS3 FastFood" />
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="apple-touch-icon" href="/logo.png" />
+    
+    <!-- Performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script type="module" src="/src/main.jsx"></script>
+   
+    
+    <!-- Service Worker Registration -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then((registration) => {
+              console.log('SW registered:', registration);
+            })
+            .catch((error) => {
+              console.log('SW registration failed:', error);
+            });
+        });
+      }
+    </script>
+  </body>
+</html>
