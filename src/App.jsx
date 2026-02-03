@@ -4,7 +4,8 @@ import {
   Routes,
   Route,
   useLocation,
-  Navigate
+  Navigate,
+  useNavigate
 } from 'react-router-dom';
 
 import { useCart } from './hooks/useCart';
@@ -34,17 +35,14 @@ import AdminDashboard from './pages/AdminDashboard';
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
-
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, [pathname]);
-
   return null;
 };
 
 const DocumentTitle = () => {
   const { pathname } = useLocation();
-
   useEffect(() => {
     const titles = {
       [ROUTES.HOME]: 'PS3 FastFood - Fresh Pizza & Ice Cream Delivery',
@@ -55,35 +53,17 @@ const DocumentTitle = () => {
       [ROUTES.ADMIN]: 'Admin Dashboard - PS3 FastFood',
       [ROUTES.ADMIN_LOGIN]: 'Admin Login - PS3 FastFood',
     };
-
     document.title = titles[pathname] || 'PS3 FastFood';
   }, [pathname]);
-
   return null;
 };
 
 /* ---------------- protected route ---------------- */
 
 const ProtectedRoute = ({ children, requireAdmin = false }) => {
-  const { user, loading } = useAuth();
-  const [isAdminFromStorage, setIsAdminFromStorage] = useState(false);
-  const [storageLoaded, setStorageLoaded] = useState(false);
+  const { user, loading, isAdmin } = useAuth();
 
-  useEffect(() => {
-    try {
-      const savedUser = localStorage.getItem('ps3-user');
-      if (savedUser) {
-        const userData = JSON.parse(savedUser);
-        setIsAdminFromStorage(userData.role === 'admin');
-      }
-    } catch (err) {
-      console.error('Error reading admin status:', err);
-    } finally {
-      setStorageLoaded(true);
-    }
-  }, []);
-
-  if (loading || !storageLoaded) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -94,7 +74,8 @@ const ProtectedRoute = ({ children, requireAdmin = false }) => {
     );
   }
 
-  if (requireAdmin && !isAdminFromStorage) {
+  // FIX: Use context state directly instead of manual localStorage checks
+  if (requireAdmin && !isAdmin) {
     return <Navigate to={ROUTES.ADMIN_LOGIN} replace />;
   }
 
@@ -110,6 +91,9 @@ const ProtectedRoute = ({ children, requireAdmin = false }) => {
 function AppContent() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [showCartNotification, setShowCartNotification] = useState(false);
+  const { user, loading, isAdmin } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const {
     cart,
@@ -123,6 +107,13 @@ function AppContent() {
     getCartSummary,
   } = useCart();
 
+  // FIX: Auto-redirect Admin to Dashboard if they hit customer pages
+  useEffect(() => {
+    if (!loading && isAdmin && !location.pathname.startsWith('/admin')) {
+      navigate(ROUTES.ADMIN, { replace: true });
+    }
+  }, [isAdmin, loading, navigate, location.pathname]);
+
   const handleAddToCart = (item, size = null, action = 'add') => {
     addToCart(item, size, action);
     if (action === 'add') {
@@ -131,7 +122,6 @@ function AppContent() {
     }
   };
 
-  const location = useLocation();
   const isAdminRoute = location.pathname.includes('/admin');
   const isLoginRoute = location.pathname.includes('/login');
 
@@ -223,6 +213,9 @@ function AppContent() {
                 </ProtectedRoute>
               }
             />
+            
+            {/* Fallback for undefined routes */}
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
 

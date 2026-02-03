@@ -124,8 +124,8 @@ const MenuDetailPage = ({ onAddToCart, getItemQuantity }) => {
         </div>
 
         {item.description && (
-            <div className="mb-8">
-                <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Description</h3>
+            <div className="mb-8 pb-4 border-b border-gray-100">
+                <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Description</h3>
                 <p className="text-gray-600 text-sm leading-relaxed font-medium">{item.description}</p>
             </div>
         )}
@@ -157,7 +157,7 @@ const MenuDetailPage = ({ onAddToCart, getItemQuantity }) => {
         )}
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-4 pb-8 z-40 shadow-[0_-8px_30px_rgba(0,0,0,0.04)]">
+      <div className="fixed bottom-12 left-0 right-0 bg-white border-t border-gray-100 p-4 pb-8 z-40 shadow-[0_-8px_30px_rgba(0,0,0,0.04)]">
         <div className="max-w-3xl mx-auto flex items-center gap-4">
             
             <div className="flex flex-col min-w-[100px]">

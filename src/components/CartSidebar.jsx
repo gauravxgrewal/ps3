@@ -23,6 +23,22 @@ const CartSidebar = ({ isOpen, onClose, cart, onRemove, onUpdateQuantity, clearC
     return () => { document.body.style.overflow = 'unset'; };
   }, [isOpen]);
 
+  // Handle mobile back button
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleBackButton = (e) => {
+      e.preventDefault();
+      onClose();
+      window.history.pushState(null, null, window.location.pathname);
+    };
+
+    window.addEventListener('popstate', handleBackButton);
+    window.history.pushState(null, null, window.location.pathname);
+
+    return () => window.removeEventListener('popstate', handleBackButton);
+  }, [isOpen, onClose]);
+
   // --- MISSING FUNCTION ADDED BACK ---
   const handlePlaceOrder = async () => {
     if (!user) {

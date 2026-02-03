@@ -59,11 +59,20 @@ const HomePage = ({ onAddToCart, getItemQuantity }) => {
             {/* Hero Image: Hidden on tiny screens, big on Desktop */}
             <div className="relative hidden md:block flex-1 max-w-md lg:max-w-lg">
                 <div className="absolute -inset-10 bg-orange-500/20 blur-[100px] rounded-full animate-pulse"></div>
-                <img 
-                  src="hero.png" 
-                  className="relative z-10 w-full drop-shadow-[0_35px_35px_rgba(0,0,0,0.5)] rotate-3 hover:rotate-0 transition-all duration-700" 
-                  alt="Delicious Food" 
-                />
+                <div className="relative z-10">
+                  <img 
+                    src="hero.png" 
+                    className="w-full drop-shadow-[0_35px_35px_rgba(0,0,0,0.5)] rounded-[2.5rem]" 
+                    alt="Delicious Food" 
+                  />
+                  <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-md rounded-2xl px-4 py-3 shadow-xl flex items-center gap-2 border border-white/20">
+                    <div className="flex items-center gap-1">
+                    
+                      <Star size={16} className="fill-yellow-400 text-yellow-400" />
+                    </div>
+                    <span className="font-bold text-slate-900 text-sm">4.9</span>
+                         </div>
+                </div>
             </div>
           </div>
         </div>

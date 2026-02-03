@@ -113,10 +113,10 @@ const MenuItem = ({ item, onAddToCart, getItemQuantity }) => {
                     {item.sizes.map((size) => (
                         <button
                             key={size.size}
-                            onClick={(e) => handleSizeSelect(e, size)} // Stop propagation here
+                            onClick={(e) => handleSizeSelect(e, size)} 
                             className={`flex-1 py-1.5 px-1 rounded-lg text-[10px] font-bold transition-all capitalize border whitespace-nowrap text-center ${
                                 selectedSize?.size === size.size
-                                ? 'bg-slate-900 text-white border-slate-900 shadow-md scale-105'
+                                ? 'bg-slate-900 text-white border-slate-900 shadow-md'
                                 : 'bg-gray-50 text-gray-500 border-transparent hover:bg-gray-100'
                             }`}
                         >

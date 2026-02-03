@@ -34,23 +34,13 @@ export const AuthProvider = ({ children }) => {
     initAuth();
   }, []);
 
-  /**
-   * Login/Register with Phone Number
-   * Directly creates or logs in user with just phone number
-   */
   const loginWithPhone = async (phoneNumber, userName = null) => {
     try {
-      // Check if user exists
       let userData = await getUserByPhone(phoneNumber);
 
-      // If user doesn't exist, create new user
       if (!userData) {
         if (!userName) {
-          return {
-            success: true,
-            isNewUser: true,
-            userExists: false
-          };
+          return { success: true, isNewUser: true, userExists: false };
         }
 
         const uid = `customer-${phoneNumber}`;
@@ -65,7 +55,6 @@ export const AuthProvider = ({ children }) => {
         userData = result.data || result;
       }
 
-      // Normalize user object
       const normalizedUser = {
         ...userData,
         id: userData.id || userData.uid || `customer-${phoneNumber}`,
@@ -75,7 +64,6 @@ export const AuthProvider = ({ children }) => {
         role: USER_ROLES.CUSTOMER
       };
 
-      // Save user session
       setUser(normalizedUser);
       localStorage.setItem('ps3-user', JSON.stringify(normalizedUser));
 
@@ -85,19 +73,12 @@ export const AuthProvider = ({ children }) => {
         user: normalizedUser,
         message: 'Login successful!'
       };
-
     } catch (error) {
       console.error('Login with phone error:', error);
-      return {
-        success: false,
-        error: error.message || 'Login failed'
-      };
+      return { success: false, error: error.message || 'Login failed' };
     }
   };
 
-  /**
-   * Admin Login (PIN-based)
-   */
   const loginAdmin = async (phone, pin) => {
     try {
       const result = await verifyAdmin(phone, pin);
@@ -109,7 +90,7 @@ export const AuthProvider = ({ children }) => {
           uid: result.user.uid || result.user.id || `admin-${result.user.phone}`,
           phone: result.user.phone,
           name: result.user.name || 'Admin',
-          role: USER_ROLES.ADMIN
+          role: USER_ROLES.ADMIN // Ensure this matches constant
         };
 
         setUser(normalizedUser);
@@ -118,20 +99,16 @@ export const AuthProvider = ({ children }) => {
       }
 
       return { success: false, error: result.error };
-
     } catch (error) {
       console.error('Admin login error:', error);
       return { success: false, error: 'Login failed' };
     }
   };
 
-  /**
-   * Sign Out
-   */
   const signOut = useCallback(() => {
     setUser(null);
     localStorage.removeItem('ps3-user');
-    localStorage.removeItem('ps3-cart'); // Clear cart on logout
+    localStorage.removeItem('ps3-cart');
   }, []);
 
   const value = useMemo(() => ({
@@ -146,6 +123,7 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider value={value}>
+      {/* Show nothing until we know the user's status to prevent UI flickering */}
       {!loading && children}
     </AuthContext.Provider>
   );
