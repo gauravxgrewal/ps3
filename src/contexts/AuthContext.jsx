@@ -37,12 +37,15 @@ export const AuthProvider = ({ children }) => {
   const loginWithPhone = async (phoneNumber, userName = null) => {
     try {
       let userData = await getUserByPhone(phoneNumber);
+      let isActuallyNew = false;
 
-      if (!userData) {
-        if (!userName) {
-          return { success: true, isNewUser: true, userExists: false };
-        }
+      // Agar user nahi hai, aur name bhi nahi hai -> Step 2 par bhejo
+      if (!userData && !userName) {
+        return { success: true, isNewUser: true };
+      }
 
+      // Agar user nahi hai, aur name mil gaya -> Register karo
+      if (!userData && userName) {
         const uid = `customer-${phoneNumber}`;
         const result = await createUser({
           phone: phoneNumber,
@@ -51,17 +54,18 @@ export const AuthProvider = ({ children }) => {
           role: USER_ROLES.CUSTOMER,
           createdAt: new Date().toISOString()
         });
-
         userData = result.data || result;
+        isActuallyNew = true;
       }
 
+      // User object format fix karo
       const normalizedUser = {
         ...userData,
         id: userData.id || userData.uid || `customer-${phoneNumber}`,
         uid: userData.uid || userData.id || `customer-${phoneNumber}`,
         phone: phoneNumber,
         name: userData.name || userName || 'Customer',
-        role: USER_ROLES.CUSTOMER
+        role: userData.role || USER_ROLES.CUSTOMER
       };
 
       setUser(normalizedUser);
@@ -69,38 +73,30 @@ export const AuthProvider = ({ children }) => {
 
       return {
         success: true,
-        isNewUser: !userData || !userData.id,
+        isNewUser: false, // Ab registration/login ho gaya toh false
         user: normalizedUser,
-        message: 'Login successful!'
+        message: isActuallyNew ? 'Account Created!' : 'Welcome Back!'
       };
     } catch (error) {
-      console.error('Login with phone error:', error);
-      return { success: false, error: error.message || 'Login failed' };
+      console.error('Login error:', error);
+      return { success: false, error: error.message || 'Authentication failed' };
     }
   };
 
   const loginAdmin = async (phone, pin) => {
     try {
       const result = await verifyAdmin(phone, pin);
-
       if (result.success) {
         const normalizedUser = {
           ...result.user,
-          id: result.user.id || result.user.uid || `admin-${result.user.phone}`,
-          uid: result.user.uid || result.user.id || `admin-${result.user.phone}`,
-          phone: result.user.phone,
-          name: result.user.name || 'Admin',
-          role: USER_ROLES.ADMIN // Ensure this matches constant
+          role: USER_ROLES.ADMIN 
         };
-
         setUser(normalizedUser);
         localStorage.setItem('ps3-user', JSON.stringify(normalizedUser));
         return { success: true };
       }
-
       return { success: false, error: result.error };
     } catch (error) {
-      console.error('Admin login error:', error);
       return { success: false, error: 'Login failed' };
     }
   };
@@ -123,7 +119,6 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider value={value}>
-      {/* Show nothing until we know the user's status to prevent UI flickering */}
       {!loading && children}
     </AuthContext.Provider>
   );

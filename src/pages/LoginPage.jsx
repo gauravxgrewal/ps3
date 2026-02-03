@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Phone, User, Lock, ChefHat, ArrowRight } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { ROUTES, VALIDATION, ERROR_MESSAGES } from '../data/constants';
+import { ROUTES, ERROR_MESSAGES } from '../data/constants';
 import Button from '../components/Button';
 import { useToast } from '../components/Toast';
-import BottomNav from '../components/BottomNav'; // Added BottomNav
+import BottomNav from '../components/BottomNav';
 
 const LoginPage = () => {
   const [step, setStep] = useState(1);
@@ -18,6 +18,7 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const toast = useToast();
 
+  // Navigation Logic
   useEffect(() => {
     if (user) {
       if (user.role === 'admin') navigate(ROUTES.ADMIN);
@@ -42,7 +43,6 @@ const LoginPage = () => {
           toast.success('Welcome! Please enter your name');
         } else {
           toast.success('✅ Welcome Back!');
-          setTimeout(() => navigate(ROUTES.HOME), 500);
         }
       } else {
         setError(result.error || 'Login failed');
@@ -56,8 +56,9 @@ const LoginPage = () => {
 
   const handleRegister = async (e) => {
     e.preventDefault();
+    setError('');
     if (userName.trim().length < 3) {
-      setError('Name is too short');
+      setError('Name is too short (min 3 chars)');
       return;
     }
 
@@ -66,7 +67,9 @@ const LoginPage = () => {
       const result = await loginWithPhone(phoneNumber, userName);
       if (result.success) {
         toast.success('✅ Account Created!');
-        setTimeout(() => navigate(ROUTES.HOME), 500);
+        // useEffect will handle the navigation
+      } else {
+        setError(result.error || 'Registration failed');
       }
     } catch (err) {
       setError('Registration failed');
@@ -78,7 +81,6 @@ const LoginPage = () => {
   return (
     <>
       <div className="min-h-screen bg-[#F8F9FA] pb-32">
-        {/* Premium Dark Header (Matched with Profile/Menu) */}
         <div className="bg-slate-900 pb-24 pt-12 rounded-b-[3rem] relative overflow-hidden shadow-xl">
           <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl"></div>
           <div className="absolute bottom-0 left-0 w-32 h-32 bg-orange-500/20 rounded-full translate-y-1/2 -translate-x-1/2 blur-2xl"></div>
@@ -92,12 +94,11 @@ const LoginPage = () => {
           </div>
         </div>
 
-        {/* Floating Login Card */}
         <div className="px-4 -mt-12 relative z-20">
           <div className="bg-white rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-gray-100 p-8 max-w-md mx-auto">
             <div className="mb-8">
               <h2 className="text-2xl font-black text-gray-900 leading-tight">
-                {step === 1 ? 'Welcome Back!' : 'Join the Club'}
+                {step === 1 ? 'Welcome Back!' : 'Join PS3 Fast Food'}
               </h2>
               <p className="text-gray-400 text-sm font-bold mt-1">
                 {step === 1 ? 'Enter your number to start eating' : 'Tell us your name to continue'}
@@ -120,15 +121,8 @@ const LoginPage = () => {
                     required
                   />
                 </div>
-
                 {error && <p className="text-xs text-red-500 font-black ml-2 animate-pulse">{error}</p>}
-
-                <Button 
-                  type="submit" 
-                  variant="primary" 
-                  className="w-full rounded-2xl py-5 text-base font-black shadow-xl shadow-orange-500/20 bg-slate-900 border-0" 
-                  isLoading={isLoading}
-                >
+                <Button type="submit" variant="primary" className="w-full rounded-2xl py-5 font-black shadow-xl bg-slate-900 border-0" isLoading={isLoading}>
                   Continue <ArrowRight size={20} className="ml-2" />
                 </Button>
               </form>
@@ -147,6 +141,7 @@ const LoginPage = () => {
                     required
                   />
                 </div>
+                {error && <p className="text-xs text-red-500 font-black ml-2 animate-pulse">{error}</p>}
                 <Button type="submit" variant="primary" className="w-full rounded-2xl py-5 font-black bg-slate-900 border-0" isLoading={isLoading}>
                   Create Account
                 </Button>
@@ -162,7 +157,7 @@ const LoginPage = () => {
         </div>
       </div>
       <BottomNav />
-      {toast.ToastComponent()}
+      {toast.ToastComponent && toast.ToastComponent()}
     </>
   );
 };
