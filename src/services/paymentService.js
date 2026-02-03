@@ -42,6 +42,12 @@ export const createRazorpayOrder = async (orderDetails) => {
       handler: function(response) {
          // Direct resolve for testing/local; ideally verify with backend
          window.rzp_resolve({ success: true, paymentId: response.razorpay_payment_id, verified: true });
+      },
+      modal: {
+        ondismiss: function() {
+          // Payment cancelled by user
+          window.rzp_resolve({ success: false, error: "Payment cancelled by user", cancelled: true });
+        }
       }
     };
 

@@ -130,9 +130,7 @@ const OrderHistoryPage = () => {
                 </div>
                 <div>
                    <h1 className="text-2xl font-black text-white leading-none">My Orders</h1>
-                   <p className="text-slate-400 text-xs font-bold mt-1">
-                      {filteredOrders.length} {filter === 'all' ? 'Total' : filter} orders
-                   </p>
+                  
                 </div>
             </div>
          </div>

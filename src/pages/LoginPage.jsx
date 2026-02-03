@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Phone, User, Lock, ChefHat } from 'lucide-react';
+import { Phone, User, Lock, ChefHat, ArrowRight } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { ROUTES, VALIDATION, ERROR_MESSAGES } from '../data/constants';
 import Button from '../components/Button';
 import { useToast } from '../components/Toast';
+import BottomNav from '../components/BottomNav'; // Added BottomNav
 
 const LoginPage = () => {
-  const [step, setStep] = useState(1); // 1: Phone, 2: Name (if new)
+  const [step, setStep] = useState(1);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [userName, setUserName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [isNewUser, setIsNewUser] = useState(false);
 
   const { loginWithPhone, user } = useAuth();
   const navigate = useNavigate();
@@ -25,78 +25,51 @@ const LoginPage = () => {
     }
   }, [user, navigate]);
 
-  // Validation
-  const validatePhone = (phone) => {
-    if (phone.length !== VALIDATION.PHONE.MAX_LENGTH) return ERROR_MESSAGES.INVALID_PHONE;
-    if (!VALIDATION.PHONE.PATTERN.test(phone)) return 'Invalid mobile number format';
-    return null;
-  };
-
-  const validateName = (name) => {
-    if (name.trim().length < VALIDATION.NAME.MIN_LENGTH) return ERROR_MESSAGES.INVALID_NAME;
-    if (!VALIDATION.NAME.PATTERN.test(name.trim())) return 'Name should contain letters only';
-    return null;
-  };
-
-  // Step 1: Check if user exists and proceed
   const handlePhoneSubmit = async (e) => {
     e.preventDefault();
     setError('');
-
-    const phoneError = validatePhone(phoneNumber);
-    if (phoneError) {
-      setError(phoneError);
+    if (phoneNumber.length !== 10) {
+      setError(ERROR_MESSAGES.INVALID_PHONE);
       return;
     }
 
     setIsLoading(true);
     try {
       const result = await loginWithPhone(phoneNumber);
-
       if (result.success) {
         if (result.isNewUser) {
-          setIsNewUser(true);
-          setStep(2); // Move to name input for new users
+          setStep(2);
           toast.success('Welcome! Please enter your name');
         } else {
-          toast.success('✅ Login successful!');
+          toast.success('✅ Welcome Back!');
           setTimeout(() => navigate(ROUTES.HOME), 500);
         }
       } else {
         setError(result.error || 'Login failed');
       }
     } catch (err) {
-      setError('Something went wrong. Please try again.');
-      console.error('Login error:', err);
+      setError('Something went wrong.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Step 2: Register new user with name
   const handleRegister = async (e) => {
     e.preventDefault();
-    setError('');
-
-    const nameError = validateName(userName);
-    if (nameError) {
-      setError(nameError);
+    if (userName.trim().length < 3) {
+      setError('Name is too short');
       return;
     }
 
     setIsLoading(true);
     try {
       const result = await loginWithPhone(phoneNumber, userName);
-
       if (result.success) {
-        toast.success('✅ Account created successfully!');
+        toast.success('✅ Account Created!');
         setTimeout(() => navigate(ROUTES.HOME), 500);
-      } else {
-        setError(result.error || 'Registration failed');
       }
     } catch (err) {
-      setError('Registration failed. Please try again.');
-      console.error('Register error:', err);
+      setError('Registration failed');
     } finally {
       setIsLoading(false);
     }
@@ -104,40 +77,37 @@ const LoginPage = () => {
 
   return (
     <>
-      <div className="min-h-screen bg-[#F8F9FA] flex flex-col">
-        {/* Header Image / Branding */}
-        <div className="bg-orange-600 h-[30vh] rounded-b-[2.5rem] relative flex items-center justify-center overflow-hidden shrink-0">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl"></div>
-          <div className="absolute bottom-0 left-0 w-32 h-32 bg-red-600 rounded-full translate-y-1/2 -translate-x-1/2 blur-2xl opacity-50"></div>
+      <div className="min-h-screen bg-[#F8F9FA] pb-32">
+        {/* Premium Dark Header (Matched with Profile/Menu) */}
+        <div className="bg-slate-900 pb-24 pt-12 rounded-b-[3rem] relative overflow-hidden shadow-xl">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl"></div>
+          <div className="absolute bottom-0 left-0 w-32 h-32 bg-orange-500/20 rounded-full translate-y-1/2 -translate-x-1/2 blur-2xl"></div>
 
-          <div className="relative z-10 text-center text-white p-6">
-            <div className="bg-white/20 backdrop-blur-md p-4 rounded-2xl inline-block mb-4 shadow-lg border border-white/10">
-              <ChefHat size={40} className="text-white" />
+          <div className="relative z-10 text-center text-white px-6">
+            <div className="bg-white/10 backdrop-blur-md p-4 rounded-3xl inline-block mb-6 border border-white/10 shadow-2xl">
+              <ChefHat size={48} className="text-orange-500" />
             </div>
-            <h1 className="text-3xl font-black tracking-tight">Welcome to PS3</h1>
-            <p className="text-orange-100 font-medium text-sm mt-1">Delicious food awaits you</p>
+            <h1 className="text-4xl font-black tracking-tight">PS3 Fast Food</h1>
+            <p className="text-slate-400 font-bold text-sm mt-2 uppercase tracking-widest">Freshness Delivered</p>
           </div>
         </div>
 
-        {/* Login Card */}
-        <div className="flex-1 px-4 -mt-10 pb-6">
-          <div className="bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-gray-100 p-6 md:p-8 max-w-md mx-auto relative z-20">
-
-            {/* Header */}
+        {/* Floating Login Card */}
+        <div className="px-4 -mt-12 relative z-20">
+          <div className="bg-white rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-gray-100 p-8 max-w-md mx-auto">
             <div className="mb-8">
-              <h2 className="text-2xl font-black text-gray-900">
-                {step === 1 ? 'Get Started' : "What's Your Name?"}
+              <h2 className="text-2xl font-black text-gray-900 leading-tight">
+                {step === 1 ? 'Welcome Back!' : 'Join the Club'}
               </h2>
-              <p className="text-gray-500 text-sm mt-1">
-                {step === 1 ? 'Enter your mobile number to continue' : 'Help us personalize your experience'}
+              <p className="text-gray-400 text-sm font-bold mt-1">
+                {step === 1 ? 'Enter your number to start eating' : 'Tell us your name to continue'}
               </p>
             </div>
 
-            {/* STEP 1: Phone Number */}
-            {step === 1 && (
-              <form onSubmit={handlePhoneSubmit} className="space-y-5">
+            {step === 1 ? (
+              <form onSubmit={handlePhoneSubmit} className="space-y-6">
                 <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400 group-focus-within:text-orange-500 transition-colors">
+                  <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-gray-400 group-focus-within:text-orange-500 transition-colors">
                     <Phone size={20} />
                   </div>
                   <input
@@ -146,35 +116,26 @@ const LoginPage = () => {
                     onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
                     placeholder="Mobile Number"
                     maxLength="10"
-                    className="w-full pl-12 pr-4 py-4 bg-gray-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-orange-500 focus:outline-none font-bold text-gray-900 transition-all placeholder:font-medium placeholder:text-gray-400 tracking-wide"
+                    className="w-full pl-14 pr-6 py-5 bg-gray-50 border-2 border-transparent rounded-[1.5rem] focus:bg-white focus:border-orange-500 focus:outline-none font-black text-gray-900 transition-all placeholder:font-bold placeholder:text-gray-400"
                     required
-                    autoFocus
                   />
                 </div>
 
-                {error && (
-                  <div className="p-3 bg-red-50 text-red-600 text-xs font-bold rounded-xl border border-red-100 flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div> {error}
-                  </div>
-                )}
+                {error && <p className="text-xs text-red-500 font-black ml-2 animate-pulse">{error}</p>}
 
                 <Button 
                   type="submit" 
                   variant="primary" 
-                  className="w-full rounded-2xl py-4 text-base shadow-lg shadow-orange-200" 
+                  className="w-full rounded-2xl py-5 text-base font-black shadow-xl shadow-orange-500/20 bg-slate-900 border-0" 
                   isLoading={isLoading}
-                  disabled={isLoading || phoneNumber.length !== 10}
                 >
-                  {isLoading ? 'Processing...' : 'Continue'}
+                  Continue <ArrowRight size={20} className="ml-2" />
                 </Button>
               </form>
-            )}
-
-            {/* STEP 2: Enter Name (New Users Only) */}
-            {step === 2 && (
-              <form onSubmit={handleRegister} className="space-y-5">
+            ) : (
+              <form onSubmit={handleRegister} className="space-y-6">
                 <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400 group-focus-within:text-orange-500 transition-colors">
+                  <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-gray-400 group-focus-within:text-orange-500 transition-colors">
                     <User size={20} />
                   </div>
                   <input
@@ -182,50 +143,25 @@ const LoginPage = () => {
                     value={userName}
                     onChange={(e) => setUserName(e.target.value)}
                     placeholder="Your Full Name"
-                    className="w-full pl-12 pr-4 py-4 bg-gray-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-orange-500 focus:outline-none font-bold text-gray-900 transition-all placeholder:font-medium placeholder:text-gray-400"
+                    className="w-full pl-14 pr-6 py-5 bg-gray-50 border-2 border-transparent rounded-[1.5rem] focus:bg-white focus:border-orange-500 focus:outline-none font-black text-gray-900 transition-all placeholder:font-bold placeholder:text-gray-400"
                     required
-                    autoFocus
                   />
                 </div>
-
-                {error && (
-                  <div className="p-3 bg-red-50 text-red-600 text-xs font-bold rounded-xl border border-red-100 flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div> {error}
-                  </div>
-                )}
-
-                <Button 
-                  type="submit" 
-                  variant="primary" 
-                  className="w-full rounded-2xl py-4 text-base shadow-lg shadow-orange-200" 
-                  isLoading={isLoading}
-                  disabled={isLoading}
-                >
-                  {isLoading ? 'Creating Account...' : 'Create Account'}
+                <Button type="submit" variant="primary" className="w-full rounded-2xl py-5 font-black bg-slate-900 border-0" isLoading={isLoading}>
+                  Create Account
                 </Button>
-
-                <button
-                  type="button"
-                  onClick={() => { setStep(1); setUserName(''); setError(''); setPhoneNumber(''); }}
-                  className="w-full py-2 text-sm font-bold text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  ← Change Number
-                </button>
               </form>
             )}
           </div>
 
-          {/* Admin Link */}
-          <div className="mt-8 text-center">
-            <button
-              onClick={() => navigate(ROUTES.ADMIN_LOGIN)}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gray-100 text-gray-500 text-xs font-bold hover:bg-gray-200 transition-colors"
-            >
+          <div className="mt-10 text-center">
+            <button onClick={() => navigate(ROUTES.ADMIN_LOGIN)} className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white border border-gray-100 shadow-sm text-gray-500 text-[10px] font-black uppercase tracking-widest hover:bg-gray-50 transition-all">
               <Lock size={12} /> Admin Access
             </button>
           </div>
         </div>
       </div>
+      <BottomNav />
       {toast.ToastComponent()}
     </>
   );

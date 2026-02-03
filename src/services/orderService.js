@@ -18,16 +18,25 @@ import {
 const ORDERS_COLLECTION = 'orders';
 
 /**
- * Helper to remove undefined values safely
+ * Helper to remove undefined values recursively
  */
 const sanitizeData = (data) => {
-  const cleaned = {};
-  Object.keys(data).forEach(key => {
-    if (data[key] !== undefined) {
-      cleaned[key] = data[key];
-    }
-  });
-  return cleaned;
+  if (Array.isArray(data)) {
+    return data.map(item => sanitizeData(item)).filter(item => item !== undefined);
+  }
+  
+  if (data !== null && typeof data === 'object') {
+    const cleaned = {};
+    Object.keys(data).forEach(key => {
+      const value = data[key];
+      if (value !== undefined && value !== null) {
+        cleaned[key] = sanitizeData(value);
+      }
+    });
+    return cleaned;
+  }
+  
+  return data;
 };
 
 // --- CREATE ---
@@ -35,7 +44,17 @@ const sanitizeData = (data) => {
 export const createOrder = async (orderData) => {
   try {
     if (!orderData) throw new Error('Invalid order data');
+    
+    // Sanitize all data including nested items
     const cleanData = sanitizeData(orderData);
+    
+    // Validate critical fields
+    if (!cleanData.userId) throw new Error('User ID is required');
+    if (!cleanData.items || cleanData.items.length === 0) throw new Error('Order must have items');
+    if (!cleanData.total) throw new Error('Order total is required');
+    
+    // Log cleaned data for debugging
+    console.log('Creating order with data:', cleanData);
     
     // Use serverTimestamp for consistent ordering
     const docRef = await addDoc(collection(db, ORDERS_COLLECTION), {
@@ -48,6 +67,7 @@ export const createOrder = async (orderData) => {
     return { success: true, orderId: docRef.id, data: { id: docRef.id, ...cleanData } };
   } catch (error) {
     console.error('Create order error:', error);
+    console.error('Failed order data:', orderData);
     return { success: false, error: error.message };
   }
 };

@@ -97,6 +97,7 @@ export const RESTAURANT_CONFIG = {
       description: 'Only the finest local produce.',
       color: 'from-green-100 to-green-50'
     },
+    
     {
       icon: '💳',
       title: 'Easy Payment',

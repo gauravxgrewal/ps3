@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, ShoppingBag, Trash2, Minus, Plus, ArrowRight, CreditCard, Wallet, LogIn, Info, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { X, ShoppingBag, Minus, Plus, CreditCard, Wallet, ShieldCheck, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react';
 import Button from './Button';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from './Toast'; 
@@ -11,6 +11,7 @@ import { ROUTES } from '../data/constants';
 const CartSidebar = ({ isOpen, onClose, cart, onRemove, onUpdateQuantity, clearCart, getCartSummary }) => {
   const [paymentMethod, setPaymentMethod] = useState('online');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isFooterExpanded, setIsFooterExpanded] = useState(true);
   
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -22,8 +23,7 @@ const CartSidebar = ({ isOpen, onClose, cart, onRemove, onUpdateQuantity, clearC
     return () => { document.body.style.overflow = 'unset'; };
   }, [isOpen]);
 
-  const generateOrderId = () => `PS3-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-
+  // --- MISSING FUNCTION ADDED BACK ---
   const handlePlaceOrder = async () => {
     if (!user) {
       toast.error("Please login to place order");
@@ -32,57 +32,71 @@ const CartSidebar = ({ isOpen, onClose, cart, onRemove, onUpdateQuantity, clearC
       return;
     }
 
-    setIsProcessing(true);
+    // Validate required fields before processing
+    if (!user.name && !user.phone) {
+      toast.error("Please update your profile first");
+      return;
+    }
 
+    setIsProcessing(true);
     try {
-      const orderId = generateOrderId();
-      const customerPhone = user.phone || user.phoneNumber || '';
-      const customerEmail = user.email || `${customerPhone}@ps3food.com`; 
+      const orderId = `PS3-${Date.now()}`;
+      const customerPhone = user.phone ? String(user.phone).trim() : '';
+      const customerName = user.name ? String(user.name).trim() : 'Guest User';
+      const userId = user.uid || user.id;
+
+      if (!userId) {
+        throw new Error("User ID not found");
+      }
 
       const paymentResult = await processPayment({
         paymentMethod,
-        orderData: {
-          amount: cartSummary.total,
-          customerName: user.name || 'Foodie',
-          customerPhone,
-          customerEmail,
-          orderId
-        }
+        orderData: { amount: cartSummary.total, customerName, customerPhone, orderId }
       });
 
       if (!paymentResult.success) throw new Error(paymentResult.error);
 
-      const orderData = {
+      // Only proceed if cart still has items
+      if (!cart || cart.length === 0) {
+        throw new Error("Cart is empty");
+      }
+
+      // Sanitize cart items to remove undefined fields
+      const cleanCartItems = cart.map(item => ({
+        id: item.id || '',
+        name: item.name || '',
+        price: item.price || 0,
+        quantity: item.quantity || 1,
+        size: item.size || '',
+        image: item.image || ''
+      })).filter(item => item.id && item.name);
+
+      if (cleanCartItems.length === 0) {
+        throw new Error("No valid items in cart");
+      }
+
+      const firebaseResult = await createOrder({
         orderId,
-        items: cart,
-        total: cartSummary.total,
-        subtotal: cartSummary.subtotal,
-        deliveryFee: cartSummary.deliveryFee,
-        tax: cartSummary.tax,
+        items: cleanCartItems,
+        total: Number(cartSummary.total) || 0,
         paymentMethod,
-        paymentId: paymentResult.paymentId || 'CASH_ORDER',
-        customerName: user.name || 'Foodie',
+        customerName,
         customerPhone,
-        customerEmail,
-        userId: user.uid || user.id,
+        userId,
         status: 'pending',
-        paymentStatus: paymentMethod === 'cash' ? 'pending' : 'completed',
         orderTime: new Date().toISOString()
-      };
+      });
 
-      const cleanOrderData = JSON.parse(JSON.stringify(orderData));
-
-      const firebaseResult = await createOrder(cleanOrderData);
-      if (!firebaseResult.success) throw new Error("Database error");
-
-      clearCart();
-      toast.success(paymentMethod === 'cash' ? "Order Placed (COD)! 🛵" : "Payment Successful! 🍕");
-      onClose();
-      navigate(ROUTES.ORDERS);
-
+      if (firebaseResult.success) {
+        clearCart();
+        toast.success("Order Placed! 🍕");
+        onClose();
+        navigate(ROUTES.ORDERS);
+      } else {
+        throw new Error(firebaseResult.error);
+      }
     } catch (error) {
-      console.error('Order Failed:', error);
-      toast.error(error.message || "Failed to place order");
+      toast.error(error.message || "Order creation failed");
     } finally {
       setIsProcessing(false);
     }
@@ -92,150 +106,115 @@ const CartSidebar = ({ isOpen, onClose, cart, onRemove, onUpdateQuantity, clearC
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/60 z-50 backdrop-blur-sm transition-opacity" onClick={onClose} />
+      <div className="fixed inset-0 bg-slate-900/60 z-[60] backdrop-blur-sm transition-opacity" onClick={onClose} />
       
-      <div className="fixed right-0 top-0 bottom-0 w-full md:max-w-md bg-white shadow-2xl z-50 flex flex-col animate-in slide-in-from-right duration-300">
+      <div className="fixed right-0 top-0 bottom-0 w-full md:max-w-[420px] bg-white z-[70] flex flex-col shadow-2xl animate-in slide-in-from-right duration-300">
         
-        {/* Header - Glassmorphism touch */}
-        <div className="p-5 border-b flex items-center justify-between bg-white/80 backdrop-blur-md sticky top-0 z-10">
+        {/* 1. Slim Header */}
+        <div className="bg-slate-900 py-3 px-5 shrink-0 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="bg-orange-500 w-10 h-10 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-orange-200">
-                <ShoppingBag size={22} />
+            <div className="bg-orange-500 p-1.5 rounded-lg text-white">
+              <ShoppingBag size={16} strokeWidth={2.5} />
             </div>
-            <div>
-                <h3 className="font-black text-xl text-gray-900 leading-none">Your Bag</h3>
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">{cart.length} Items Selected</p>
-            </div>
+            <h3 className="text-sm font-black text-white uppercase tracking-tight">Cart ({cart.length})</h3>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-400 hover:text-gray-900">
-            <X size={24}/>
+          <button onClick={onClose} className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded-lg text-white flex items-center justify-center transition-all">
+            <X size={18} strokeWidth={3} />
           </button>
         </div>
 
-        {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto p-5 space-y-8 bg-gray-50/50 custom-scrollbar">
+        {/* 2. Scrollable Body: 2 Columns */}
+        <div className="flex-1 overflow-y-auto bg-[#F8F9FA] px-2 py-3 scrollbar-hide">
           {cart.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-center px-10">
-                <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center text-gray-300 mb-4">
-                    <ShoppingBag size={48} />
-                </div>
-                <h4 className="font-black text-gray-900 text-lg">Empty Bag!</h4>
-                <p className="text-gray-500 text-sm mt-2 font-medium">Add some delicious food from the menu to get started.</p>
-                <button onClick={onClose} className="mt-6 text-orange-500 font-bold text-sm underline">Browse Menu</button>
-              </div>
+            <div className="h-full flex flex-col items-center justify-center text-center opacity-30">
+              <ShoppingBag size={40} className="mb-2" />
+              <p className="text-[10px] font-black uppercase">Your cart is empty</p>
+            </div>
           ) : (
-            <>
-              {/* Items List */}
-              <div className="space-y-4">
-                <div className="flex justify-between items-end px-1">
-                    <h4 className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Order Details</h4>
-                    <button onClick={clearCart} className="text-[10px] font-bold text-red-500 uppercase tracking-wider">Clear All</button>
-                </div>
-                {cart.map(item => (
-                    <div key={item.id} className="bg-white p-4 rounded-3xl border border-gray-100 shadow-[0_4px_12px_rgba(0,0,0,0.03)] flex gap-4 transition-transform active:scale-[0.98]">
-                        <div className="w-20 h-20 bg-gray-50 rounded-2xl overflow-hidden shrink-0 border border-gray-50">
-                            {item.image ? <img src={item.image} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center bg-orange-50 text-2xl">🍕</div>}
-                        </div>
-                        <div className="flex-1 flex flex-col justify-between py-1">
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <h4 className="font-black text-gray-800 text-sm leading-tight">{item.name}</h4>
-                                    <p className="text-[10px] text-gray-400 font-bold mt-1">Standard Size</p>
-                                </div>
-                                <button onClick={() => onRemove(item.id)} className="text-gray-300 hover:text-rose-500 transition-colors"><Trash2 size={16}/></button>
-                            </div>
-                            <div className="flex justify-between items-center mt-2">
-                                <span className="font-black text-orange-600">₹{item.price * item.quantity}</span>
-                                <div className="flex items-center bg-gray-50 border border-gray-100 rounded-xl p-1 px-2 gap-4">
-                                    <button onClick={() => onUpdateQuantity(item.id, item.quantity - 1)} className="w-6 h-6 flex items-center justify-center bg-white rounded-lg shadow-sm text-gray-400 hover:text-black"><Minus size={12} strokeWidth={3}/></button>
-                                    <span className="text-xs font-black text-gray-900">{item.quantity}</span>
-                                    <button onClick={() => onUpdateQuantity(item.id, item.quantity + 1)} className="w-6 h-6 flex items-center justify-center bg-white rounded-lg shadow-sm text-gray-400 hover:text-black"><Plus size={12} strokeWidth={3}/></button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                ))}
-              </div>
+            <div className="grid grid-cols-2 gap-2">
+              {cart.map(item => (
+                <div key={item.id} className="bg-white p-2 rounded-xl border border-slate-100 shadow-sm flex flex-col">
+                  <div className="relative w-full aspect-square bg-slate-50 rounded-lg overflow-hidden mb-2">
+                    {item.image ? (
+                      <img src={item.image} className="w-full h-full object-cover" alt={item.name} />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-xl">🍕</div>
+                    )}
+                  </div>
+                  
+                  <div className="flex-1 min-h-[32px]">
+                    <h4 className="text-[10px] font-bold text-slate-800 line-clamp-2 uppercase leading-tight">{item.name}</h4>
+                    <p className="text-[11px] font-black text-slate-900 mt-1">₹{item.price * item.quantity}</p>
+                  </div>
 
-              {/* Payment Methods */}
-              <div className="space-y-4">
-                <h4 className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-1">Payment Method</h4>
-                <div className="grid grid-cols-2 gap-4">
-                    <button 
-                        onClick={() => setPaymentMethod('online')}
-                        className={`relative p-5 rounded-[2rem] border-2 transition-all duration-300 flex flex-col items-center gap-3 ${paymentMethod === 'online' ? 'border-blue-600 bg-blue-50/50 shadow-lg shadow-blue-100' : 'border-white bg-white shadow-sm hover:border-gray-100'}`}
-                    >
-                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-colors ${paymentMethod === 'online' ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-gray-100 text-gray-400'}`}>
-                            <CreditCard size={24} />
-                        </div>
-                        <span className={`text-xs font-black uppercase tracking-wide ${paymentMethod === 'online' ? 'text-blue-700' : 'text-gray-500'}`}>Pay Online</span>
-                        {paymentMethod === 'online' && <div className="absolute top-3 right-3 bg-blue-600 rounded-full p-0.5"><CheckCircle2 size={14} className="text-white" /></div>}
-                    </button>
-
-                    <button 
-                        onClick={() => setPaymentMethod('cash')}
-                        className={`relative p-5 rounded-[2rem] border-2 transition-all duration-300 flex flex-col items-center gap-3 ${paymentMethod === 'cash' ? 'border-emerald-600 bg-emerald-50/50 shadow-lg shadow-emerald-100' : 'border-white bg-white shadow-sm hover:border-gray-100'}`}
-                    >
-                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-colors ${paymentMethod === 'cash' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-200' : 'bg-gray-100 text-gray-400'}`}>
-                            <Wallet size={24} />
-                        </div>
-                        <span className={`text-xs font-black uppercase tracking-wide ${paymentMethod === 'cash' ? 'text-emerald-700' : 'text-gray-500'}`}>Cash / COD</span>
-                        {paymentMethod === 'cash' && <div className="absolute top-3 right-3 bg-emerald-600 rounded-full p-0.5"><CheckCircle2 size={14} className="text-white" /></div>}
-                    </button>
+                  <div className="flex items-center justify-between mt-2 bg-slate-50 rounded-lg p-1 border border-slate-100">
+                    <button onClick={() => onUpdateQuantity(item.id, item.quantity - 1)} className="w-6 h-6 flex items-center justify-center bg-white rounded-md text-slate-400 shadow-sm"><Minus size={10} strokeWidth={3}/></button>
+                    <span className="text-[10px] font-black text-slate-900">{item.quantity}</span>
+                    <button onClick={() => onUpdateQuantity(item.id, item.quantity + 1)} className="w-6 h-6 flex items-center justify-center bg-white rounded-md text-slate-400 shadow-sm"><Plus size={10} strokeWidth={3}/></button>
+                  </div>
                 </div>
-
-                {/* Info Note */}
-                <div className={`p-4 rounded-3xl border flex gap-3 transition-all duration-500 ${paymentMethod === 'cash' ? 'bg-emerald-50 border-emerald-100' : 'bg-blue-50 border-blue-100'}`}>
-                    <Info size={18} className={paymentMethod === 'cash' ? 'text-emerald-500' : 'text-blue-500'} />
-                    <p className={`text-[11px] font-bold leading-relaxed ${paymentMethod === 'cash' ? 'text-emerald-700' : 'text-blue-700'}`}>
-                        {paymentMethod === 'cash' 
-                            ? 'CASH ON DELIVERY: Place your order now. Pay in cash or via QR to our delivery partner upon arrival.' 
-                            : 'SECURE CHECKOUT: Pay instantly using UPI, Credit/Debit Cards or Netbanking via our secure gateway.'}
-                    </p>
-                </div>
-              </div>
-
-              {/* Summary Card - Dark Modern Look */}
-              <div className="bg-slate-900 rounded-[2.5rem] p-6 text-white shadow-2xl shadow-slate-300 relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-4 opacity-5">
-                    <ShieldCheck size={100} />
-                </div>
-                <div className="space-y-3 pb-4 border-b border-white/10 relative z-10">
-                    <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.2em] text-white/50"><span>Subtotal</span><span>₹{cartSummary.subtotal}</span></div>
-                    <div className="flex justify-between text-[10px] font-black uppercase tracking-[0.2em] text-white/50"><span>Delivery Fee</span><span className="text-emerald-400">FREE</span></div>
-                </div>
-                <div className="pt-4 flex justify-between items-center relative z-10">
-                    <div>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-orange-500 mb-1">Total Payable</p>
-                        <span className="text-3xl font-black tracking-tight">₹{cartSummary.total}</span>
-                    </div>
-                    <div className="bg-white/10 px-3 py-1 rounded-full border border-white/10">
-                        <span className="text-[10px] font-bold text-white/80">Incl. all taxes</span>
-                    </div>
-                </div>
-              </div>
-            </>
+              ))}
+            </div>
           )}
         </div>
 
-        {/* Footer Button - Floating Effect */}
+        {/* 3. Hidable Footer */}
         {cart.length > 0 && (
-          <div className="p-6 bg-white border-t border-gray-50">
-            <Button 
+          <div className="bg-white border-t border-slate-100 shadow-[0_-10px_30px_rgba(0,0,0,0.08)] shrink-0">
+            {/* Arrow Toggle */}
+            <button 
+              onClick={() => setIsFooterExpanded(!isFooterExpanded)}
+              className="w-full py-1.5 flex items-center justify-center text-slate-300 hover:text-slate-500"
+            >
+              {isFooterExpanded ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
+            </button>
+
+            <div className={`${isFooterExpanded ? 'px-5 pb-5 pt-1 block' : 'hidden'}`}>
+              <div className="flex justify-between items-center mb-4">
+                <div className="space-y-0.5">
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Total Amount</p>
+                  <span className="text-2xl font-black text-slate-900 tracking-tighter">₹{cartSummary.total}</span>
+                </div>
+                
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => setPaymentMethod('online')}
+                    className={`p-2 rounded-xl border-2 transition-all ${paymentMethod === 'online' ? 'border-blue-500 bg-blue-50 text-blue-600 shadow-sm' : 'border-slate-100 text-slate-300'}`}
+                  >
+                    <CreditCard size={18} />
+                  </button>
+                  <button 
+                    onClick={() => setPaymentMethod('cash')}
+                    className={`p-2 rounded-xl border-2 transition-all ${paymentMethod === 'cash' ? 'border-emerald-500 bg-emerald-50 text-emerald-600 shadow-sm' : 'border-slate-100 text-slate-300'}`}
+                  >
+                    <Wallet size={18} />
+                  </button>
+                </div>
+              </div>
+
+              <Button 
                 onClick={handlePlaceOrder} 
                 variant="primary" 
                 fullWidth 
-                className={`py-5 rounded-full shadow-2xl transition-all duration-300 gap-3 group active:scale-95 ${
-                    paymentMethod === 'cash' ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200' : 'bg-slate-900 hover:bg-black shadow-slate-200'
+                className={`py-4 rounded-xl flex items-center justify-center gap-3 font-black uppercase tracking-widest text-[11px] border-0 transition-colors ${
+                  paymentMethod === 'cash' ? 'bg-emerald-600' : 'bg-slate-900'
                 }`}
                 isLoading={isProcessing}
-            >
-              <span className="font-black text-sm uppercase tracking-[0.15em]">
-                {paymentMethod === 'cash' ? 'Confirm Order' : 'Complete Payment'}
-              </span>
-              <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-            </Button>
-            <p className="text-center text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-4">Secure 256-bit SSL Encryption</p>
+              >
+                {paymentMethod === 'cash' ? 'Confirm Order' : 'Pay & Checkout'}
+                <ChevronRight size={16} strokeWidth={3} />
+              </Button>
+            </div>
+
+            {/* Collapsed Bar */}
+            {!isFooterExpanded && (
+              <div className="px-5 pb-5 pt-1 flex items-center justify-between">
+                <span className="text-xl font-black text-slate-900">₹{cartSummary.total}</span>
+                <button onClick={() => setIsFooterExpanded(true)} className="text-[10px] font-black uppercase text-blue-600 bg-blue-50 px-3 py-2 rounded-lg">
+                  Show Checkout
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
