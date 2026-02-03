@@ -136,12 +136,14 @@ const AdminDashboard = () => {
                 <p className="text-[10px] font-bold text-slate-400 mt-0.5 tracking-wide">ADMIN PORTAL</p>
             </div>
           </div>
-          <button 
-            onClick={() => { signOut(); navigate('/'); }} 
-            className="w-9 h-9 bg-slate-100 text-slate-500 rounded-full flex items-center justify-center hover:bg-slate-200 hover:text-red-500 active:bg-slate-300 transition-all duration-200"
-          >
-            <LogOut size={16} strokeWidth={2.5} />
-          </button>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => { signOut(); navigate('/'); }} 
+              className="w-9 h-9 bg-slate-100 text-slate-500 rounded-full flex items-center justify-center hover:bg-slate-200 hover:text-red-500 active:bg-slate-300 transition-all duration-200"
+            >
+              <LogOut size={16} strokeWidth={2.5} />
+            </button>
+          </div>
         </div>
 
         {/* Stats Row */}

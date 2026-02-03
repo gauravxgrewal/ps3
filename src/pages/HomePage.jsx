@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { APP_CONFIG, FEATURES, ROUTES } from '../data/constants';
 import { getPopularItems } from '../data/menuData';
@@ -6,9 +6,35 @@ import Button from '../components/Button';
 import MenuItem from '../components/MenuItem';
 import { Zap, Star, PhoneCall, ArrowRight, ChefHat, Timer, UtensilsCrossed, MapPin } from 'lucide-react';
 import Footer from '../components/Footer';
+import { getImageUrl } from '../utils/image';
+import { subscribeToMenu } from '../services/menuService';
 
 const HomePage = ({ onAddToCart, getItemQuantity }) => {
-  const popularItems = getPopularItems().slice(0, 8);
+  const [dbItems, setDbItems] = useState([]);
+  const [hasDbMenu, setHasDbMenu] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = subscribeToMenu(
+      (items) => {
+        setDbItems(items);
+        setHasDbMenu(items && items.length > 0);
+      },
+      () => setHasDbMenu(false)
+    );
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, []);
+
+  const popularItems = useMemo(() => {
+    if (hasDbMenu) {
+      const available = dbItems.filter((i) => i.available !== false);
+      const popular = available.filter((i) => i.popular);
+      return (popular.length ? popular : available).slice(0, 8);
+    }
+    return getPopularItems().slice(0, 8);
+  }, [dbItems, hasDbMenu]);
 
   return (
     <div className="bg-[#F8F9FA] min-h-screen font-sans">
@@ -61,7 +87,7 @@ const HomePage = ({ onAddToCart, getItemQuantity }) => {
                 <div className="absolute -inset-10 bg-orange-500/20 blur-[100px] rounded-full animate-pulse"></div>
                 <div className="relative z-10">
                   <img 
-                    src="hero.png" 
+                    src={getImageUrl('hero.png')} 
                     className="w-full drop-shadow-[0_35px_35px_rgba(0,0,0,0.5)] rounded-[2.5rem]" 
                     alt="Delicious Food" 
                   />

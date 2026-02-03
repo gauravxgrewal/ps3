@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useMemo } from 'react';
 import { menuData } from '../data/menuData';
 
 /**
@@ -10,20 +10,25 @@ import { menuData } from '../data/menuData';
  * - Enhanced animations
  * - Premium look like Swiggy/Zomato
  */
-const CategoryFilter = ({ activeCategory, onCategoryChange }) => {
+const CategoryFilter = ({ activeCategory, onCategoryChange, categoriesSource = null }) => {
   const scrollContainerRef = useRef(null);
   const activeButtonRef = useRef(null);
 
-  // Build categories list
-  const categories = [
-    { id: 'all', name: 'All', fullName: 'All Items', icon: '🍽️' },
-    ...Object.entries(menuData).map(([key, category]) => ({
+  // Build categories list, from Firestore-based map if provided, else static menuData
+  const categories = useMemo(() => {
+    const base = [{ id: 'all', name: 'All', fullName: 'All Items', icon: '🍽️' }];
+
+    const source = categoriesSource || menuData;
+
+    const dynamic = Object.entries(source).map(([key, category]) => ({
       id: key,
-      name: category.name.split(' ')[0], // Short name for mobile
-      fullName: category.name, // Full name for desktop
-      icon: category.icon,
-    })),
-  ];
+      name: (category.name || key).split(' ')[0], // Short name for mobile
+      fullName: category.name || key, // Full name for desktop
+      icon: category.icon || '🍽️',
+    }));
+
+    return [...base, ...dynamic];
+  }, [categoriesSource]);
 
   // Auto-scroll active category into view
   useEffect(() => {

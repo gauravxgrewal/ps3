@@ -7,6 +7,7 @@ import { useToast } from './Toast';
 import { processPayment } from '../services/paymentService';
 import { createOrder } from '../services/orderService';
 import { ROUTES } from '../data/constants';
+import { getImageUrl } from '../utils/image';
 
 const CartSidebar = ({ isOpen, onClose, cart, onRemove, onUpdateQuantity, clearCart, getCartSummary }) => {
   const [paymentMethod, setPaymentMethod] = useState('online');
@@ -152,7 +153,11 @@ const CartSidebar = ({ isOpen, onClose, cart, onRemove, onUpdateQuantity, clearC
                 <div key={item.id} className="bg-white p-2 rounded-xl border border-slate-100 shadow-sm flex flex-col">
                   <div className="relative w-full aspect-square bg-slate-50 rounded-lg overflow-hidden mb-2">
                     {item.image ? (
-                      <img src={item.image} className="w-full h-full object-cover" alt={item.name} />
+                      <img
+                        src={getImageUrl(item.image)}
+                        className="w-full h-full object-cover"
+                        alt={item.name}
+                      />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-xl">🍕</div>
                     )}
@@ -195,13 +200,21 @@ const CartSidebar = ({ isOpen, onClose, cart, onRemove, onUpdateQuantity, clearC
                 <div className="flex gap-2">
                   <button 
                     onClick={() => setPaymentMethod('online')}
-                    className={`p-2 rounded-xl border-2 transition-all ${paymentMethod === 'online' ? 'border-blue-500 bg-blue-50 text-blue-600 shadow-sm' : 'border-slate-100 text-slate-300'}`}
+                    className={`p-2 rounded-xl border-2 transition-all ${
+                      paymentMethod === 'online'
+                        ? 'border-blue-500 bg-blue-50 text-blue-600 shadow-sm'
+                        : 'border-slate-100 text-slate-300'
+                    }`}
                   >
                     <CreditCard size={18} />
                   </button>
                   <button 
                     onClick={() => setPaymentMethod('cash')}
-                    className={`p-2 rounded-xl border-2 transition-all ${paymentMethod === 'cash' ? 'border-emerald-500 bg-emerald-50 text-emerald-600 shadow-sm' : 'border-slate-100 text-slate-300'}`}
+                    className={`p-2 rounded-xl border-2 transition-all ${
+                      paymentMethod === 'cash'
+                        ? 'border-emerald-500 bg-emerald-50 text-emerald-600 shadow-sm'
+                        : 'border-slate-100 text-slate-300'
+                    }`}
                   >
                     <Wallet size={18} />
                   </button>

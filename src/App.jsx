@@ -30,6 +30,7 @@ import ProfilePage from './pages/ProfilePage';
 import LoginPage from './pages/LoginPage';
 import AdminLoginPage from './pages/AdminLoginPage';
 import AdminDashboard from './pages/AdminDashboard';
+import OrderDetailPage from './pages/OrderDetailPage';
 
 /* ---------------- helpers ---------------- */
 
@@ -189,6 +190,15 @@ function AppContent() {
               element={
                 <ProtectedRoute>
                   <OrderHistoryPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path={ROUTES.ORDER_DETAILS}
+              element={
+                <ProtectedRoute>
+                  <OrderDetailPage />
                 </ProtectedRoute>
               }
             />

@@ -1,17 +1,3 @@
-/**
- * ========================================
- * RESTAURANT CONFIGURATION
- * ========================================
- * 
- * Change this file to customize for any restaurant
- * All settings are centralized here
- * 
- * HOW TO USE:
- * 1. Update restaurant details below
- * 2. Replace images in /public folder
- * 3. Update menu in menuData.js
- * 4. Deploy!
- */
 
 export const RESTAURANT_CONFIG = {
   // Basic Information

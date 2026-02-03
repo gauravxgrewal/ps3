@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { getUserByPhone, createUser, verifyAdmin } from '../services/userService';
 import { USER_ROLES } from '../data/constants';
+import RESTAURANT_CONFIG from '../data/restaurant.config';
 
 const AuthContext = createContext(null);
 
@@ -22,7 +23,21 @@ export const AuthProvider = ({ children }) => {
         const savedUser = localStorage.getItem('ps3-user');
         if (savedUser) {
           const userData = JSON.parse(savedUser);
-          setUser(userData);
+
+          // Basic session timeout to avoid infinite logins from stale localStorage
+          const timeoutMinutes = RESTAURANT_CONFIG?.admin?.sessionTimeout || 120;
+          const lastLoginAt = userData.lastLoginAt
+            ? new Date(userData.lastLoginAt)
+            : null;
+
+          if (
+            !lastLoginAt ||
+            Date.now() - lastLoginAt.getTime() > timeoutMinutes * 60 * 1000
+          ) {
+            localStorage.removeItem('ps3-user');
+          } else {
+            setUser(userData);
+          }
         }
       } catch (error) {
         console.error('Auth initialization error:', error);
@@ -65,7 +80,8 @@ export const AuthProvider = ({ children }) => {
         uid: userData.uid || userData.id || `customer-${phoneNumber}`,
         phone: phoneNumber,
         name: userData.name || userName || 'Customer',
-        role: userData.role || USER_ROLES.CUSTOMER
+        role: userData.role || USER_ROLES.CUSTOMER,
+        lastLoginAt: new Date().toISOString(),
       };
 
       setUser(normalizedUser);
@@ -89,7 +105,8 @@ export const AuthProvider = ({ children }) => {
       if (result.success) {
         const normalizedUser = {
           ...result.user,
-          role: USER_ROLES.ADMIN 
+          role: USER_ROLES.ADMIN,
+          lastLoginAt: new Date().toISOString(),
         };
         setUser(normalizedUser);
         localStorage.setItem('ps3-user', JSON.stringify(normalizedUser));

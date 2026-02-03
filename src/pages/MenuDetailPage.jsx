@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, Minus, Share2, Clock, Star, Info, ChevronRight, Trash2, Check } from 'lucide-react';
 import { menuData } from '../data/menuData';
 import Badge from '../components/Badge';
+import { getImageUrl } from '../utils/image';
 
 const MenuDetailPage = ({ onAddToCart, getItemQuantity }) => {
   const { id } = useParams();
@@ -71,12 +72,12 @@ const MenuDetailPage = ({ onAddToCart, getItemQuantity }) => {
         </div>
 
         {item.image ? (
-            <img 
-                src={item.image} 
-                alt={item.name} 
-                className={`w-full h-full object-cover transition-opacity duration-700 ease-in-out ${isImageLoading ? 'opacity-0 scale-105' : 'opacity-100 scale-100'}`}
-                onLoad={() => setIsImageLoading(false)}
-            />
+          <img 
+            src={getImageUrl(item.image)} 
+            alt={item.name} 
+            className={`w-full h-full object-cover transition-opacity duration-700 ease-in-out ${isImageLoading ? 'opacity-0 scale-105' : 'opacity-100 scale-100'}`}
+            onLoad={() => setIsImageLoading(false)}
+          />
         ) : (
             <div className="w-full h-full bg-gradient-to-br from-orange-400 to-red-600 flex items-center justify-center">
                 <span className="text-9xl filter drop-shadow-lg animate-pulse">🍕</span>

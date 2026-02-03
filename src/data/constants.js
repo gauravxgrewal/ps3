@@ -26,6 +26,7 @@ export const ROUTES = {
   MENU: '/menu',
   CONTACT: '/contact',
   ORDERS: '/orders',
+  ORDER_DETAILS: '/orders/:id',
   PROFILE: '/profile',
   LOGIN: '/login',
   ADMIN: '/admin',

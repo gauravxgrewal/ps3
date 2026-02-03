@@ -168,7 +168,11 @@ const OrderHistoryPage = () => {
           </div>
         ) : (
           filteredOrders.map(order => (
-            <div key={order.id} onClick={() => navigate(`${ROUTES.ORDER_DETAILS}/${order.id}`)} className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden active:scale-[0.99] transition-transform duration-200 cursor-pointer">
+            <div
+              key={order.id}
+              onClick={() => navigate(`/orders/${order.id}`)}
+              className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden active:scale-[0.99] transition-transform duration-200 cursor-pointer"
+            >
               <div className="p-5">
                 <div className="flex justify-between items-start mb-4">
                   <div>

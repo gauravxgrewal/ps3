@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate
+import { useNavigate } from 'react-router-dom';
 import { Plus, Minus, Star } from 'lucide-react';
 import Button from './Button';
 import Badge from './Badge';
+import { getImageUrl } from '../utils/image';
 
 const MenuItem = ({ item, onAddToCart, getItemQuantity }) => {
   const navigate = useNavigate(); // Hook for navigation
@@ -55,16 +56,16 @@ const MenuItem = ({ item, onAddToCart, getItemQuantity }) => {
       {/* 1. Image Section (Fixed Height) */}
       <div className="relative mb-3 flex-shrink-0">
         <div className="w-full aspect-[4/3] bg-gray-50 rounded-2xl overflow-hidden flex items-center justify-center relative">
-            {item.image ? (
-                <img 
-                  src={item.image} 
-                  alt={item.name} 
-                  className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500" 
-                  loading="lazy"
-                />
-            ) : (
-                <span className="text-4xl filter grayscale opacity-50">🍕</span>
-            )}
+          {item.image ? (
+            <img 
+              src={getImageUrl(item.image)} 
+              alt={item.name} 
+              className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500" 
+              loading="lazy"
+            />
+          ) : (
+            <span className="text-4xl filter grayscale opacity-50">🍕</span>
+          )}
             <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent"></div>
         </div>
 

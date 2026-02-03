@@ -6,12 +6,15 @@ import CategoryFilter from '../components/CategoryFilter';
 import SkeletonItem from '../components/SkeletonItem';
 import Footer from '../components/Footer';
 import { ChefHat, Search, UtensilsCrossed, ArrowUp } from 'lucide-react';
+import { subscribeToMenu } from '../services/menuService';
 
 const MenuPage = ({ onAddToCart, getItemQuantity }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
   const [isLoading, setIsLoading] = useState(true);
+  const [dbItems, setDbItems] = useState([]);
+  const [hasDbMenu, setHasDbMenu] = useState(false);
   const contentRef = useRef(null);
 
   useEffect(() => {
@@ -24,11 +27,76 @@ const MenuPage = ({ onAddToCart, getItemQuantity }) => {
     return () => clearTimeout(timer);
   }, []);
 
+  // Subscribe to Firestore menu (real-time). Fallback to static if empty/error.
+  useEffect(() => {
+    const unsubscribe = subscribeToMenu(
+      (items) => {
+        setDbItems(items);
+        setHasDbMenu(items && items.length > 0);
+      },
+      () => {
+        setHasDbMenu(false);
+      }
+    );
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, []);
+
+  const effectiveAllItems = useMemo(() => {
+    if (hasDbMenu) {
+      // Filter out unavailable items by default
+      return dbItems.filter((i) => i.available !== false);
+    }
+    return Object.values(menuData).flatMap((category) => category.items);
+  }, [dbItems, hasDbMenu]);
+
+  const effectiveCategories = useMemo(() => {
+    if (!hasDbMenu) {
+      return menuData;
+    }
+    // Build a category map from Firestore items
+    const byCat = {};
+    for (const item of effectiveAllItems) {
+      const catId = item.categoryId || 'misc';
+      if (!byCat[catId]) {
+        byCat[catId] = {
+          id: catId,
+          name: item.categoryName || catId,
+          icon: item.icon || '🍽️',
+          items: [],
+        };
+      }
+      byCat[catId].items.push(item);
+    }
+    return byCat;
+  }, [effectiveAllItems, hasDbMenu]);
+
   const filteredItems = useMemo(() => {
-    if (debouncedQuery.trim()) return searchMenuItems(debouncedQuery);
-    if (activeCategory === 'all') return Object.values(menuData).flatMap(category => category.items);
+    if (debouncedQuery.trim()) {
+      if (hasDbMenu) {
+        const q = debouncedQuery.toLowerCase();
+        return effectiveAllItems.filter((item) =>
+          (item.name || '').toLowerCase().includes(q) ||
+          (item.description || '').toLowerCase().includes(q) ||
+          (item.categoryName || '').toLowerCase().includes(q)
+        );
+      }
+      return searchMenuItems(debouncedQuery);
+    }
+
+    if (activeCategory === 'all') {
+      return effectiveAllItems;
+    }
+
+    if (hasDbMenu) {
+      const cat = effectiveCategories[activeCategory];
+      return cat?.items || [];
+    }
+
     return getItemsByCategory(activeCategory);
-  }, [debouncedQuery, activeCategory]);
+  }, [debouncedQuery, activeCategory, hasDbMenu, effectiveAllItems, effectiveCategories]);
 
   const handleCategoryChange = useCallback((category) => {
     setActiveCategory(category);
@@ -59,7 +127,7 @@ const MenuPage = ({ onAddToCart, getItemQuantity }) => {
                     Discover <span className="text-orange-500">Taste</span>
                 </h1>
                 <p className="text-slate-400 text-sm font-medium">
-                    {Object.values(menuData).reduce((acc, cat) => acc + cat.items.length, 0)} delicious items waiting for you
+                    {effectiveAllItems.length} delicious items waiting for you
                 </p>
             </div>
         </div>
@@ -75,7 +143,8 @@ const MenuPage = ({ onAddToCart, getItemQuantity }) => {
                 />
                 <CategoryFilter 
                     activeCategory={activeCategory} 
-                    onCategoryChange={handleCategoryChange} 
+                    onCategoryChange={handleCategoryChange}
+                    categoriesSource={hasDbMenu ? effectiveCategories : null}
                 />
             </div>
         </div>
@@ -106,7 +175,7 @@ const MenuPage = ({ onAddToCart, getItemQuantity }) => {
             ) : (
               <div className="space-y-10">
                 {activeCategory === 'all' && !debouncedQuery ? (
-                  Object.entries(menuData).map(([key, category]) => (
+                  Object.entries(effectiveCategories).map(([key, category]) => (
                     <div key={key} className="space-y-4">
                       {/* Category Header */}
                       <div className="flex items-end gap-3 pt-5 px-2">
@@ -140,7 +209,9 @@ const MenuPage = ({ onAddToCart, getItemQuantity }) => {
                   <>
                     <div className="flex items-center pt-5 justify-between px-2">
                       <h2 className="text-lg font-black text-gray-900">
-                        {debouncedQuery ? `Results for "${debouncedQuery}"` : menuData[activeCategory]?.name || 'Selection'}
+                        {debouncedQuery
+                          ? `Results for "${debouncedQuery}"`
+                          : (effectiveCategories[activeCategory]?.name || 'Selection')}
                       </h2>
                       <span className="px-2 py-1 bg-gray-100 rounded-lg text-xs font-bold text-gray-500">
                         {filteredItems.length} found
