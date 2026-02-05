@@ -1,9 +1,9 @@
 
 export const RESTAURANT_CONFIG = {
   // Basic Information
-  name: 'PS3 FASTFOOD',
-  tagline: 'Junction & Ice Cream',
-  description: 'Best Pizza & Ice Cream in town. Fast delivery, Fresh ingredients!',
+  name: 'GentlemenCafe',
+  tagline: 'Restaurant and Cafe',
+  description: 'Best Cafe in town. Fast delivery, Fresh ingredients!',
   
   // Contact Details
   contact: {
@@ -14,7 +14,7 @@ export const RESTAURANT_CONFIG = {
   
   // Location
   location: {
-    address: 'PS3 Fast Food Junction & Ice Cream, Main Market Road',
+    address:  Main Market Road',
     area: 'Sector 12, Main Market Road',
     city: 'Your City',
     state: 'Your State',
